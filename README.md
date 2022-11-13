@@ -1,14 +1,24 @@
 # Preface 
 
-This project is a demo for a websocket-based input synchronization method inspired by [GGPO](https://www.ggpo.net/).   
-![screenshot-1](./screenshot-1.png)
+This project is a demo for a websocket-based rollback netcode inspired by [GGPO](https://github.com/pond3r/ggpo/blob/master/doc/README.md).
 
-Please checkout [this demo video](https://pan.baidu.com/s/123LlWcT9X-wbcYybqYnvmA?pwd=qrlw) to see whether the source codes are doing what you expect for synchronization.
+![gif_demo](./charts/along_wall_interaction_with_reconnection.gif)
+
+Please also checkout [this demo video](https://pan.baidu.com/s/1YkfuHjNLzlFVnKiEj6wrDQ?pwd=tkr5) to see how this demo carries out a full 60fps synchronization with the help of _batched input upsync/downsync_ for satisfying network I/O performance.
 
 The video mainly shows the following features.
-- The backend receives inputs from frontend peers and [by a GGPO-alike manner](https://github.com/pond3r/ggpo/blob/master/doc/README.md) broadcasts back for synchronization.
+- The backend receives inputs from frontend peers and broadcasts back for synchronization.
 - The game is recovered for a player upon reconnection.
-- Both backend(Golang) and frontend(JavaScript) execute collision detection and handle collision contacts by the same algorithm. The backend dynamics can be toggled off by [Room.BackendDynamicsEnabled](https://github.com/genxium/DelayNoMore/blob/v0.5.2/battle_srv/models/room.go#L813), but **when turned off the game couldn't support recovery upon reconnection**.
+- Both backend(Golang) and frontend(JavaScript) execute collision detection and handle collision contacts by the same algorithm. The backend dynamics is togglable by [Room.BackendDynamicsEnabled](https://github.com/genxium/DelayNoMore/blob/v0.5.2/battle_srv/models/room.go#L813), but **when turned off the game couldn't support recovery upon reconnection**.
+
+_(how input delay roughly works)_
+
+![input_delay_intro](./charts/InputDelayIntro.jpg)
+
+_(how rollback-and-chase in this project roughly works)_
+
+![rollback_and_chase_intro](./charts/RollbackAndChase.jpg)
+![floating_point_accumulation_err](./charts/AvoidingFloatingPointAccumulationErr.jpg)
 
 # 1. Building & running
 
@@ -22,7 +32,7 @@ The video mainly shows the following features.
 - [protobuf CLI](https://developers.google.com/protocol-buffers/docs/downloads) (optional, only for development)
 
 ### Frontend
-- [CocosCreator v2.2.1](https://www.cocos.com/en/cocos-creator-2-2-1-released-with-performance-improvements) (mandatory, **ONLY AVAILABLE on Windows or OSX and should be exactly this version**, DON'T use any other version because CocosCreator is well-known for new versions not being backward incompatible)
+- [CocosCreator v2.2.1](https://www.cocos.com/en/cocos-creator-2-2-1-released-with-performance-improvements) (mandatory, **ONLY AVAILABLE on Windows or OSX and should be exactly this version**, DON'T use any other version because CocosCreator is well-known for new versions not being backward compatible)
 - [protojs](https://www.npmjs.com/package/protojs) (optional, only for development)
 
 ## 1.2 Provisioning
@@ -67,7 +77,7 @@ The easy way is to try out 2 players with test accounts on a same machine.
 - Open one browser instance, visit _http://localhost:7456?expectedRoomId=1_, input `add`on the username box and click to request a captcha, this is a test account so a captcha would be returned by the backend and filled automatically (as shown in the figure below), then click and click to proceed to a matching scene.
 - Open another browser instance, visit _http://localhost:7456?expectedRoomId=1_, input `bdd`on the username box and click to request a captcha, this is another test account so a captcha would be returned by the backend and filled automatically, then click and click to proceed, when matched a `battle`(but no competition rule yet) would start.
 - Try out the onscreen virtual joysticks to move the cars and see if their movements are in-sync.
-![screenshot-2](./screenshot-2.png)
+![screenshot-2](./charts/screenshot-2.png)
 
 ## 2 Troubleshooting
 
