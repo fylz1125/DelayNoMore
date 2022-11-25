@@ -4,58 +4,38 @@ option go_package = "battle_srv/protos"; // here "./" corresponds to the "--go_o
 package protos;
 import "geometry.proto"; // The import path here is only w.r.t. the proto file, not the Go package.
 
-message BattleColliderInfo {
-  string stageName = 1;
-  map<string, sharedprotos.Vec2DList> strToVec2DListMap = 2; 
-  map<string, sharedprotos.Polygon2DList> strToPolygon2DListMap = 3; 
-  int32 stageDiscreteW = 4;
-  int32 stageDiscreteH = 5;
-  int32 stageTileW = 6;
-  int32 stageTileH = 7;
-
-  int32 intervalToPing        = 8;
-  int32 willKickIfInactiveFor = 9;
-  int32 boundRoomId           = 10;
-  int64 battleDurationNanos   = 11;
-  int32 serverFps             = 12;
-  int32 inputDelayFrames      = 13;
-  uint32 inputScaleFrames     = 14;
-  int32 nstDelayFrames        = 15;
-  int32 inputFrameUpsyncDelayTolerance = 16;  
-  int32 maxChasingRenderFramesPerUpdate = 17;
-  int32 playerBattleState = 18;
-  double rollbackEstimatedDtMillis = 19;
-  int64 rollbackEstimatedDtNanos = 20;
- 
-  double worldToVirtualGridRatio = 21;
-  double virtualGridToWorldRatio = 22;
-}
-
 message PlayerDownsync {
   int32 id = 1;
   int32 virtualGridX = 2; 
   int32 virtualGridY = 3; 
-  sharedprotos.Direction dir = 4;
-  int32 speed = 5; // in terms of virtual grid units
-  int32 battleState = 6;
-  int32 lastMoveGmtMillis = 7;
-  int32 score = 10;
-  bool removed = 11;
-  int32 joinIndex = 12;
+  int32 dirX = 4;
+  int32 dirY = 5;
+  int32 speed = 6; // in terms of virtual grid units
+  int32 battleState = 7;
+  int32 joinIndex = 8;
+  double colliderRadius = 9;
+  bool removed = 10;
+  int32 score = 11;
+  int32 lastMoveGmtMillis = 12;
+  int32 framesToRecover = 13;
+  int32 hp = 14;
+  int32 maxHp = 15;
+  int32 characterState = 16;
+
+  string name = 17;
+  string displayName = 18;
+  string avatar = 19;
 }
 
-message PlayerDownsyncMeta {
-  int32 id = 1;
-  string name = 2;
-  string displayName = 3;
-  string avatar = 4;
-  int32 joinIndex = 5;
-  double colliderRadius = 6;
+message InputFrameDecoded {
+  int32 dx = 1;
+  int32 dy = 2;
+  int32 btnALevel = 3;
 }
 
 message InputFrameUpsync {
   int32 inputFrameId = 1;
-  int32 encodedDir = 6;
+  uint64 encoded = 2;
 }
 
 message InputFrameDownsync {
@@ -66,13 +46,6 @@ message InputFrameDownsync {
 
 message HeartbeatUpsync {
   int64 clientTimestamp = 1;     
-}
-
-message RoomDownsyncFrame {
-  int32 id = 1;
-  map<int32, PlayerDownsync> players = 2;
-  int64 countdownNanos = 3;
-  map<int32, PlayerDownsyncMeta> playerMetas = 4;
 }
 
 message WsReq {
@@ -93,4 +66,72 @@ message WsResp {
   RoomDownsyncFrame rdf = 4; 
   repeated InputFrameDownsync inputFrameDownsyncBatch = 5;
   BattleColliderInfo bciFrame = 6; 
+}
+
+message MeleeBullet { 
+  // Jargon reference https://www.thegamer.com/fighting-games-frame-data-explained/
+  // ALL lengths are in world coordinate
+
+  // for offender  
+  int32 battleLocalId = 1;
+  int32 startupFrames = 2; 
+  int32 activeFrames = 3;  
+  int32 recoveryFrames = 4;
+  int32 recoveryFramesOnBlock = 5; 
+  int32 recoveryFramesOnHit = 6;  
+  sharedprotos.Vec2D moveforward = 7;  
+  double hitboxOffset = 8;  
+  sharedprotos.Vec2D hitboxSize = 9;    
+  int32 originatedRenderFrameId = 10; 
+
+  // for defender
+  int32 hitStunFrames = 11; 
+  int32 blockStunFrames = 12; 
+  double pushback = 13;  
+
+  int32 releaseTriggerType = 14; // 1: rising-edge, 2: falling-edge  
+  int32 damage = 15;   
+
+  int32 offenderJoinIndex = 16;    
+  int32 offenderPlayerId = 17;    
+} 
+
+message BattleColliderInfo {
+  string stageName = 1;
+  map<string, sharedprotos.Vec2DList> strToVec2DListMap = 2; 
+  map<string, sharedprotos.Polygon2DList> strToPolygon2DListMap = 3; 
+  int32 stageDiscreteW = 4;
+  int32 stageDiscreteH = 5;
+  int32 stageTileW = 6;
+  int32 stageTileH = 7;
+
+  int32 intervalToPing        = 8;
+  int32 willKickIfInactiveFor = 9;
+  int32 boundRoomId           = 10;
+  int32 battleDurationFrames  = 12;
+  int64 battleDurationNanos   = 13;
+  int32 serverFps             = 14;
+  int32 inputDelayFrames      = 15; // in the count of render frames
+  uint32 inputScaleFrames     = 16; // inputDelayedAndScaledFrameId = ((originalFrameId - InputDelayFrames) >> InputScaleFrames)
+  int32 nstDelayFrames        = 17; // network-single-trip delay in the count of render frames, proposed to be (InputDelayFrames >> 1) because we expect a round-trip delay to be exactly "InputDelayFrames"
+  int32 inputFrameUpsyncDelayTolerance = 18;  
+  int32 maxChasingRenderFramesPerUpdate = 19;
+  int32 playerBattleState = 20;
+  double rollbackEstimatedDtMillis = 21;
+  int64 rollbackEstimatedDtNanos = 22;
+ 
+  double worldToVirtualGridRatio = 23;
+  double virtualGridToWorldRatio = 24;
+
+  int32 spAtkLookupFrames = 25;
+  int32 renderCacheSize = 26;
+
+  map<int32, MeleeBullet> meleeSkillConfig = 27; // skillId -> skill
+}
+
+message RoomDownsyncFrame {
+  int32 id = 1;
+  map<int32, PlayerDownsync> players = 2;
+  int64 countdownNanos = 3;
+  repeated MeleeBullet meleeBullets = 4; // I don't know how to mimic inheritance/composition in protobuf by far, thus using an array for each type of bullet as a compromise 
 }
